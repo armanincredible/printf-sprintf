@@ -1,7 +1,8 @@
 section .text
 global _start 
 _start:     
-
+            mov rcx, str
+            push rcx
             mov rdi, 42
             push rdi
             mov rdi, 42
@@ -15,7 +16,10 @@ _start:
             mov rcx, buffer
             push rcx
             call _sprintf
-            add rsp, 4 * 8
+            add rsp, 7 * 8
+            pop rcx
+            pop rcx
+            pop rcx
             pop rcx
             pop rcx
             pop rcx
@@ -68,6 +72,25 @@ _start:
             jmp repeat
 %endmacro
 
+%macro      str_copy 2
+
+            push rbx
+            push rdx
+            push rdi
+
+            xor rbx, rbx
+            mov rbx, %1
+            sub rbx, %2
+            mov rdx, %2
+            mov rdi, rsi
+            call Strncpy
+            add rsi, rbx
+
+            pop rdi
+            pop rdx
+            pop rbx
+%endmacro
+
 _sprintf:
             push rbp
             mov rbp, rsp
@@ -82,12 +105,9 @@ _sprintf:
             mov rsi, [rbp + 16]
             mov rdi, [rbp + 24] 
             lea r8, [rbp + 32]
-            ;mov r8, rbp
-            ;add r8, 8
 
-
-repeat:
 ;-------------------------------------------------
+repeat:
             mov r9, rdi
 
             mov al, '$'
@@ -109,21 +129,7 @@ repeat:
             mov rax, rdi
             mov rdi, r9
 ;----------------------------------------------- if found % programm is here and copy all before this
-            push rbx
-            push rdx
-            push rdi
-
-            xor rbx, rbx
-            mov rbx, rax 
-            sub rbx, rdi
-            mov rdx, rdi
-            mov rdi, rsi
-            call Strncpy
-            add rsi, rbx
-
-            pop rdi
-            pop rdx
-            pop rbx
+            str_copy rax, rdi
             mov rdi, rax
 ;-------------------------------------------------work with symbol after % in switch 
 .@check:
@@ -146,44 +152,29 @@ repeat:
             mov rcx, [jump_table + r9 * 8]
             jmp rcx
             jmp return
-
 d_print:
             num_print 10, 0 
-
 x_print:
             num_print 16, 4 
-
 b_print:
             num_print 2, 1 
-
 o_print:
             num_print 8, 3 
-
 s_print:
             push rdi
-            push rbx
             push rax
-            push rdx
 
             mov rdi, [r8]
             mov bl, '$'
             call Strchr
-            xor rbx, rbx
-            mov rbx, rax
-            sub rbx, rdi
-            mov rdx, rdi
-            mov rdi, rsi
-            call Strncpy
-            add rsi, rbx
 
-            pop rdx
+            str_copy rax, rdi
+
             pop rax
-            pop rbx
             pop rdi
 
             add r8, 8
             jmp repeat
-
 c_print:
             push ax
             mov al, [r8]
@@ -193,7 +184,6 @@ c_print:
 
             add r8, 8
             jmp repeat
-
 pr_print:
             push ax
             mov al, '%'
@@ -201,26 +191,9 @@ pr_print:
             pop ax
             add rsi, 1
             jmp repeat
-
 last_copy:
-            push rdx
-            push rdi
-            push rbx
-
-            xor rbx, rbx
-            mov rbx, rdi
-            sub rbx, r9
-            mov rdx, r9
-            mov rdi, rsi
-            call Strncpy
-
-            add rsi, rbx
-            pop rbx
-            pop rdi
-            pop rdx
-
+            str_copy rdi, r9
             jmp return
-
 return:
             sub rsi, [rbp + 16]
             mov rax, rsi
@@ -308,8 +281,6 @@ Strncpy:
 
                     ret
 
-
-
 StrncpyInclude:
 .@while:             
                     mov byte al, [rdx]
@@ -371,7 +342,6 @@ ItoaInclude10d:
                     xor rsi, rsi
                     mov sil, bl
                     mov rcx, rdi
-; div rdx eax = rax - частное rdx - остаток
 .@while:
                     mov eax, edx
                     xor rdx, rdx
@@ -456,8 +426,6 @@ ItoaInclude2xD:
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-
 ;-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ;---------------------------------------------------------- 
 ; SwapElementsInclude
@@ -507,9 +475,9 @@ SwapElementsInclude:
 ;-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 section     .data
 
-Msg:        db "num %d in d, %x in x, %o in o, %b in b$"
+Msg:        db "num %d in d, %x in x, %o in o, %b in b; %% %s", 0x0A, '$'
 
-str:        db "my ratdnfisbfi$"
+str:        db "im here man$"
 
 table:      db "dxobcs%"
 table_len   equ $-table
