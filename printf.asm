@@ -1,5 +1,5 @@
 section .text
-global _start 
+;global _start 
 _start:     
 
             mov rdi, 42
@@ -45,8 +45,19 @@ _start:
 
             mov bl, %1
             mov cl, %2
-            mov rdx, [r8]
             mov rdi, rsi
+            mov rdx, [r8]
+            ;cmp rdx, 0
+            test rdx, rdx
+            jnl %%gocall
+            push ax
+            mov al, '-'
+            mov [rsi], al
+            neg rdx
+            pop ax
+            add rsi, 1
+            add rdi, 1
+%%gocall:
             call Itoa
             add rsi, rax
 
@@ -59,8 +70,21 @@ _start:
             add r8, 8
             jmp repeat
 %endmacro
-
+global _printf
 _printf:
+            pop rax
+
+            push r9
+            push r8
+            push rcx
+            push rdx
+            push rsi
+            push rdi
+            ;xor rax, rax
+
+            push rax
+            xor rax, rax
+
             push rbp
             mov rbp, rsp
 
@@ -502,7 +526,7 @@ SwapElementsInclude:
 ;-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 section     .data
 
-Msg:        db "num %d in d, %x in x, %o in o, %b in b$"
+Msg:        db "num %d in d, %x in x, %o in o, %b in b", 0x0A, '$'
 
 str:        db "my ratdnfisbfi$"
 
@@ -517,4 +541,4 @@ jump_table  dq d_print
             dq s_print
             dq pr_print
 
-buffer:     db "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+buffer:     db 64 dup (0) 
