@@ -106,7 +106,7 @@ repeat:
 ;-------------------------------------------------
             mov r9, rdi
 
-            mov al, '$'
+            mov al, 0
             cmp [rdi], al
             je return
 
@@ -115,7 +115,7 @@ repeat:
             je .@check
 .@while:             
             add rdi, 1
-            mov al, '$'
+            mov al, 0
             cmp [rdi], al
             je last_copy
             mov al, '%'
@@ -146,19 +146,16 @@ repeat:
             mov rax, rdi
             add rdi, 2
 ;-------------------------------------------------switch with find symbol
-            mov cx, table_len
-            mov r9, table
-            mov bl, [rax + 1]
-.@take_ptr:
-            cmp [r9], bl
-            je .@switch
-            add r9, 1
-            sub cx, 1
-            cmp cx, 0
-            jne .@take_ptr
+            xor rcx, rcx
+            ;mov r9, table
+            xor r9, r9
+            movzx r9, byte [rax + 1]
+            cmp r9, '%'
+            jne .@switch
+            jmp pr_print 
 ;-------------------------------------------------
 .@switch:
-            sub r9, table
+            sub r9, 'b'
             mov rcx, [jump_table + r9 * 8]
             jmp rcx
             jmp return
@@ -182,7 +179,7 @@ s_print:
             push rdx
 
             mov rdi, [r8]
-            mov bl, '$'
+            mov bl, 0
             call Strchr
             xor rbx, rbx
             mov rbx, rax
@@ -209,7 +206,18 @@ c_print:
 
             add r8, 8
             jmp repeat
+symb_print:
+            push cx
+            mov cl, '%'
+            mov [rsi], cl
+            add rsi, 1
+            mov cl, [rax + 1]
+            mov [rsi], cl
+            pop cx
+            add rsi, 1
 
+            ;add r8, 8
+            jmp repeat
 pr_print:
             push ax
             mov al, '%'
@@ -338,7 +346,7 @@ StrncpyInclude:
                     add rdx, 1
                     sub bx, 1
 
-                    cmp al, '$'
+                    cmp al, 0
                     je .@ret
                     
                     cmp bx, 0
@@ -526,19 +534,22 @@ SwapElementsInclude:
 ;-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 section     .data
 
-Msg:        db "num %d in d, %x in x, %o in o, %b in b", 0x0A, '$'
+Msg:        db "num %b in d, %x in x, %o in o, %b in b", 0x0A
 
 str:        db "my ratdnfisbfi$"
 
 table:      db "dxobcs%"
 table_len   equ $-table
 
-jump_table  dq d_print
-            dq x_print
-            dq o_print
+jump_table:
             dq b_print
             dq c_print
+            dq d_print
+            times 'o'-'d'-1   dq (symb_print) 
+            dq o_print
+            times 's' - 'o'-1 dq (symb_print)
             dq s_print
-            dq pr_print
+            times 'x' - 's'-1 dq (symb_print)
+            dq x_print
 
 buffer:     db 64 dup (0) 
