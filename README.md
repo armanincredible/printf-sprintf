@@ -7,5 +7,6 @@ This is my implementation of the printf function, callable from C. It is also wr
 + %h <=> hex number
 + %o <=> octal number
 + %b <=> binary number
++ %% <=> %
 ## Peculiarity
-Implemented jump table, which speeds up the function
+Implemented jump table, which speeds up the function.
